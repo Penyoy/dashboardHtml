@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anime Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6366f1',
+                        secondary: '#8b5cf6',
+                        dark: '#0f172a',
+                        darker: '#020617'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); }
+        .gradient-text { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .drop-zone { border: 2px dashed #475569; transition: all 0.3s; }
+        .drop-zone.dragover { border-color: #6366f1; background: rgba(99, 102, 241, 0.1); }
+        .loading { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-darker text-gray-100 min-h-screen">
+    <!-- Layout -->
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-dark border-r border-gray-800 hidden md:flex flex-col">
+            <div class="p-6 border-b border-gray-800">
+                <h1 class="text-2xl font-bold gradient-text"><i class="fas fa-play-circle mr-2"></i>AnimeAdmin</h1>
+            </div>
+            
+            <nav class="flex-1 p-4 space-y-2">
+                <button onclick="showPage('dashboard')" class="nav-btn w-full text-left px-4 py-3 rounded-lg hover:bg-gray-800 transition flex items-center text-gray-300 hover:text-white">
+                    <i class="fas fa-home w-6"></i> Dashboard
+                </button>
+                <button onclick="showPage('anime-list')" class="nav-btn w-full text-left px-4 py-3 rounded-lg hover:bg-gray-800 transition flex items-center text-gray-300 hover:text-white">
+                    <i class="fas fa-film w-6"></i> Daftar Anime
+                </button>
+                <button onclick="showPage('add-anime')" class="nav-btn w-full text-left px-4 py-3 rounded-lg hover:bg-gray-800 transition flex items-center text-gray-300 hover:text-white">
+                    <i class="fas fa-plus w-6"></i> Tambah Anime
+                </button>
+                <button onclick="showPage('upload-episode')" class="nav-btn w-full text-left px-4 py-3 rounded-lg hover:bg-gray-800 transition flex items-center text-gray-300 hover:text-white">
+                    <i class="fas fa-upload w-6"></i> Upload Episode
+                </button>
+            </nav>
+
+            <div class="p-4 border-t border-gray-800">
+                <div class="text-xs text-gray-500">API Base URL</div>
+                <input type="text" id="apiBaseUrl" value="https://api.penyoy.cloud" class="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm mt-1 focus:border-primary focus:outline-none">
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto">
+            <!-- Mobile Header -->
+            <header class="md:hidden bg-dark border-b border-gray-800 p-4 flex justify-between items-center">
+                <h1 class="text-xl font-bold gradient-text">AnimeAdmin</h1>
+                <button onclick="document.querySelector('aside').classList.toggle('hidden'); document.querySelector('aside').classList.toggle('fixed'); document.querySelector('aside').classList.toggle('z-50'); document.querySelector('aside').classList.toggle('h-full');" class="text-gray-300">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+            </header>
+
+            <div class="p-6 max-w-7xl mx-auto">
+                
+                <!-- Dashboard Page -->
+                <div id="page-dashboard" class="page">
+                    <h2 class="text-3xl font-bold mb-6">Dashboard</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div class="glass rounded-xl p-6 border border-gray-700">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-400 text-sm">Total Anime</p>
+                                    <p class="text-3xl font-bold mt-1" id="stat-total-anime">0</p>
+                                </div>
+                                <div class="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center text-primary">
+                                    <i class="fas fa-film text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="glass rounded-xl p-6 border border-gray-700">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-400 text-sm">Total Episode</p>
+                                    <p class="text-3xl font-bold mt-1" id="stat-total-episode">0</p>
+                                </div>
+                                <div class="w-12 h-12 bg-secondary/20 rounded-full flex items-center justify-center text-secondary">
+                                    <i class="fas fa-play text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="glass rounded-xl p-6 border border-gray-700">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-400 text-sm">Genre</p>
+                                    <p class="text-3xl font-bold mt-1" id="stat-total-genre">0</p>
+                                </div>
+                                <div class="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center text-green-500">
+                                    <i class="fas fa-tags text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass rounded-xl p-6 border border-gray-700">
+                        <h3 class="text-xl font-semibold mb-4">Anime Terbaru</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead class="text-gray-400 border-b border-gray-700">
+                                    <tr>
+                                        <th class="pb-3">Anime</th>
+                                        <th class="pb-3">Status</th>
+                                        <th class="pb-3">Episode</th>
+                                        <th class="pb-3">Rating</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recent-anime-list" class="text-sm">
+                                    <tr><td colspan="4" class="py-4 text-center text-gray-500">Loading...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Anime List Page -->
+                <div id="page-anime-list" class="page hidden">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-3xl font-bold">Daftar Anime</h2>
+                        <button onclick="showPage('add-anime')" class="bg-primary hover:bg-primary/80 px-4 py-2 rounded-lg transition flex items-center gap-2">
+                            <i class="fas fa-plus"></i> Tambah Anime
+                        </button>
+                    </div>
+
+                    <div class="glass rounded-xl border border-gray-700 overflow-hidden">
+                        <div class="p-4 border-b border-gray-700 flex gap-4">
+                            <input type="text" id="search-anime" placeholder="Cari anime..." class="bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 flex-1 focus:border-primary focus:outline-none" onkeyup="searchAnime()">
+                            <select id="filter-status" class="bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:border-primary focus:outline-none" onchange="loadAnimeList()">
+                                <option value="">Semua Status</option>
+                                <option value="ongoing">Ongoing</option>
+                                <option value="end">Completed</option>
+                            </select>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead class="bg-gray-900/50 text-gray-400 text-sm">
+                                    <tr>
+                                        <th class="p-4">Cover</th>
+                                        <th class="p-4">Judul</th>
+                                        <th class="p-4">Genre</th>
+                                        <th class="p-4">Status</th>
+                                        <th class="p-4">Episode</th>
+                                        <th class="p-4">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="anime-table-body" class="divide-y divide-gray-800">
+                                    <tr><td colspan="6" class="p-8 text-center text-gray-500">Loading...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add/Edit Anime Page -->
+                <div id="page-add-anime" class="page hidden">
+                    <h2 class="text-3xl font-bold mb-6" id="form-title">Tambah Anime Baru</h2>
+                    
+                    <form id="anime-form" class="glass rounded-xl p-6 border border-gray-700 space-y-6">
+                        <input type="hidden" id="anime-id">
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="space-y-2">
+                                <label class="text-sm text-gray-400">ID Anime (unique)*</label>
+                                <input type="text" id="anime-id-input" required class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:border-primary focus:outline-none" placeholder="contoh: naruto-shippuden">
+                            </div>
+                            
+                            <div class="space-y-2">
+                                <label class="text-sm text-gray-400">Judul*</label>
+                                <input type="text" id="anime-title" required class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:border-primary focus:outline-none" placeholder="Judul anime">
+                            </div>
+
+                            <div class="space-y-2">
+                                <label class="text-sm text-gray-400">Status</label>
+                                <select id="anime-status" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:border-primary focus:outline-none">
+                                    <option value="ongoing">Ongoing</option>
+                                    <option value="end">Completed</option>
+                                    <option value="upcoming">Upcoming</option>
+                                </select>
+                            </div>
+
+                            <div class="space-y-2">
+                                <label class="text-sm text-gray-400">Rating (0-10)</label>
+                                <input type="number" id="anime-rating" min="0" max="10" step="0.1" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:border-primary focus:outline-none" placeholder="8.5">
+                            </div>
+
+                            <div class="space-y-2 md:col-span-2">
+                                <label class="text-sm text-gray-400">Genre (pisahkan dengan koma)</label>
+                                <input type="text" id="anime-genres" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:border-primary focus:outline-none" placeholder="Action, Adventure, Fantasy">
+                            </div>
+
+                            <div class="space-y-2 md:col-span-2">
+                                <label class="text-sm text-gray-400">Deskripsi</label>
+                                <textarea id="anime-description" rows="4" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:border-primary focus:outline-none" placeholder="Deskripsi anime..."></textarea>
+                            </div>
+
+                            <!-- Thumbnail Upload -->
+                            <div class="space-y-2 md:col-span-2">
+                                <label class="text-sm text-gray-400">Cover/Thumbnail</label>
+                                <div class="drop-zone rounded-lg p-8 text-center cursor-pointer" onclick="document.getElementById('cover-input').click()">
+                                    <input type="file" id="cover-input" class="hidden" accept="image/*" onchange="handleCoverSelect(this)">
+                                    <img id="cover-preview" class="max-h-48 mx-auto rounded-lg hidden mb-4">
+                                    <div id="cover-placeholder">
+                                        <i class="fas fa-image text-4xl text-gray-600 mb-2"></i>
+                                        <p class="text-gray-400">Klik atau drag image ke sini</p>
+                                        <p class="text-xs text-gray-600 mt-1">atau masukkan URL di bawah</p>
+                                    </div>
+                                </div>
+                                <input type="text" id="cover-url" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:border-primary focus:outline-none mt-2" placeholder="https://example.com/image.jpg">
+                            </div>
+                        </div>
+
+                        <div class="flex gap-3 pt-4 border-t border-gray-700">
+                            <button type="submit" class="bg-primary hover:bg-primary/80 px-6 py-2 rounded-lg transition flex items-center gap-2">
+                                <i class="fas fa-save"></i> Simpan Anime
+                            </button>
+                            <button type="button" onclick="showPage('anime-list')" class="bg-gray-700 hover:bg-gray-600 px-6 py-2 rounded-lg transition">
+                                Batal
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Upload Episode Page -->
+                <div id="page-upload-episode" class="page hidden">
+                    <h2 class="text-3xl font-bold mb-6">Upload Episode</h2>
+                    
+                    <form id="episode-form" class="glass rounded-xl p-6 border border-gray-700 space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="space-y-2">
+                                <label class="text-sm text-gray-400">Pilih Anime*</label>
+                                <select id="episode-anime-id" required class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:border-primary focus:outline-none">
+                                    <option value="">-- Pilih Anime --</option>
+                                </select>
+                            </div>
+
+                            <div class="space-y-2">
+                                <label class="text-sm text-gray-400">Nomor Episode*</label>
+                                <input type="number" id="episode-number" required min="1" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:border-primary focus:outline-none" placeholder="1">
+                            </div>
+
+                            <div class="space-y-2">
+                                <label class="text-sm text-gray-400">Judul Episode</label>
+                                <input type="text" id="episode-title" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:border-primary focus:outline-none" placeholder="Episode 1: Judul">
+                            </div>
+
+                            <div class="space-y-2">
+                                <label class="text-sm text-gray-400">Durasi (detik)</label>
+                                <input type="number" id="episode-duration" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:border-primary focus:outline-none" placeholder="1420">
+                            </div>
+                        </div>
+
+                        <!-- Video Upload -->
+                        <div class="space-y-2">
+                            <label class="text-sm text-gray-400">File Video*</label>
+                            <div id="video-drop-zone" class="drop-zone rounded-lg p-8 text-center relative">
+                                <input type="file" id="video-input" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept="video/*" required onchange="handleVideoSelect(this)">
+                                <div id="video-info">
+                                    <i class="fas fa-video text-4xl text-gray-600 mb-2"></i>
+                                    <p class="text-gray-400">Klik atau drag video file (MP4, MKV, dll)</p>
+                                    <p class="text-xs text-gray-600 mt-1">Max 2GB</p>
+                                </div>
+                                <div id="video-selected" class="hidden">
+                                    <i class="fas fa-check-circle text-green-500 text-4xl mb-2"></i>
+                                    <p class="text-green-400 font-medium" id="video-filename">video.mp4</p>
+                                    <p class="text-sm text-gray-400" id="video-size">0 MB</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Thumbnail Upload -->
+                        <div class="space-y-2">
+                            <label class="text-sm text-gray-400">Thumbnail Episode (opsional)</label>
+                            <div class="drop-zone rounded-lg p-6 text-center cursor-pointer" onclick="document.getElementById('ep-thumb-input').click()">
+                                <input type="file" id="ep-thumb-input" class="hidden" accept="image/*" onchange="handleEpThumbSelect(this)">
+                                <img id="ep-thumb-preview" class="max-h-32 mx-auto rounded hidden mb-2">
+                                <div id="ep-thumb-placeholder">
+                                    <i class="fas fa-image text-2xl text-gray-600 mb-1"></i>
+                                    <p class="text-sm text-gray-400">Pilih thumbnail</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-3 pt-4 border-t border-gray-700">
+                            <button type="submit" id="btn-upload-ep" class="bg-primary hover:bg-primary/80 px-6 py-2 rounded-lg transition flex items-center gap-2">
+                                <i class="fas fa-upload"></i> Upload Episode
+                            </button>
+                            <button type="button" onclick="showPage('anime-list')" class="bg-gray-700 hover:bg-gray-600 px-6 py-2 rounded-lg transition">
+                                Batal
+                            </button>
+                        </div>
+
+                        <div id="upload-progress" class="hidden">
+                            <div class="flex justify-between text-sm mb-1">
+                                <span>Uploading...</span>
+                                <span id="progress-text">0%</span>
+                            </div>
+                            <div class="w-full bg-gray-700 rounded-full h-2">
+                                <div id="progress-bar" class="bg-primary h-2 rounded-full transition-all" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Manage Episodes Page -->
+                <div id="page-manage-episodes" class="page hidden">
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <button onclick="showPage('anime-list')" class="text-gray-400 hover:text-white mb-2 flex items-center gap-2 text-sm">
+                                <i class="fas fa-arrow-left"></i> Kembali
+                            </button>
+                            <h2 class="text-3xl font-bold" id="manage-anime-title">Manage Episodes</h2>
+                        </div>
+                        <button onclick="openUploadForCurrentAnime()" class="bg-primary hover:bg-primary/80 px-4 py-2 rounded-lg transition flex items-center gap-2">
+                            <i class="fas fa-plus"></i> Tambah Episode
+                        </button>
+                    </div>
+
+                    <div class="glass rounded-xl border border-gray-700 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead class="bg-gray-900/50 text-gray-400 text-sm">
+                                    <tr>
+                                        <th class="p-4">Episode</th>
+                                        <th class="p-4">Judul</th>
+                                        <th class="p-4">Duration</th>
+                                        <th class="p-4">Aired</th>
+                                        <th class="p-4">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="episodes-table-body" class="divide-y divide-gray-800">
+                                    <tr><td colspan="5" class="p-8 text-center text-gray-500">Pilih anime terlebih dahulu</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-4 right-4 bg-gray-800 border border-gray-700 text-white px-6 py-3 rounded-lg shadow-lg transform translate-y-20 transition-transform duration-300 z-50 flex items-center gap-3">
+        <i id="toast-icon" class="fas fa-check-circle text-green-500"></i>
+        <span id="toast-message">Success!</span>
+    </div>
+
+    <script>
+        // Global State
+        let currentAnime = null;
+        let animeList = [];
+        let selectedVideoFile = null;
+        let selectedThumbnailFile = null;
+        let selectedCoverFile = null;
+
+        // Helper Functions
+        function getBaseUrl() {
+            return document.getElementById('apiBaseUrl').value.replace(/\/$/, '');
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const icon = document.getElementById('toast-icon');
+            const msg = document.getElementById('toast-message');
+            
+            msg.textContent = message;
+            icon.className = type === 'success' ? 'fas fa-check-circle text-green-500' : 'fas fa-exclamation-circle text-red-500';
+            
+            toast.classList.remove('translate-y-20');
+            setTimeout(() => toast.classList.add('translate-y-20'), 3000);
+        }
+
+        function showPage(pageName) {
+            document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+            document.getElementById(`page-${pageName}`).classList.remove('hidden');
+            
+            // Update nav active state
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-gray-800', 'text-white');
+                btn.classList.add('text-gray-300');
+            });
+            
+            if (pageName === 'dashboard') loadDashboard();
+            if (pageName === 'anime-list') loadAnimeList();
+            if (pageName === 'upload-episode') loadAnimeSelect();
+        }
+
+        // API Functions
+        async function fetchApi(endpoint, options = {}) {
+            try {
+                const url = `${getBaseUrl()}${endpoint}`;
+                const response = await fetch(url, {
+                    ...options,
+                    headers: {
+                        ...options.headers,
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return await response.json();
+            } catch (error) {
+                console.error('API Error:', error);
+                showToast('Error: ' + error.message, 'error');
+                throw error;
+            }
+        }
+
+        async function loadDashboard() {
+            try {
+                const data = await fetchApi('/api/anime');
+                animeList = data.data || [];
+                
+                document.getElementById('stat-total-anime').textContent = animeList.length;
+                
+                const totalEpisodes = animeList.reduce((acc, anime) => acc + (anime.episodesList?.length || 0), 0);
+                document.getElementById('stat-total-episode').textContent = totalEpisodes;
+                
+                // Load genres
+                const genresData = await fetchApi('/api/genres');
+                document.getElementById('stat-total-genre').textContent = genresData.data?.length || 0;
+                
+                // Recent anime
+                const recent = animeList.slice(0, 5);
+                const tbody = document.getElementById('recent-anime-list');
+                tbody.innerHTML = recent.map(a => `
+                    <tr class="border-b border-gray-800">
+                        <td class="py-3 flex items-center gap-3">
+                            <img src="${a.cover}" class="w-10 h-14 object-cover rounded" onerror="this.src='https://via.placeholder.com/40x56'">
+                            <span class="font-medium">${a.title}</span>
+                        </td>
+                        <td class="py-3"><span class="px-2 py-1 rounded text-xs ${a.status === 'ongoing' ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'}">${a.status}</span></td>
+                        <td class="py-3">${a.episodes?.total || 0}</td>
+                        <td class="py-3 text-yellow-400"><i class="fas fa-star mr-1"></i>${a.rating || '-'}</td>
+                    </tr>
+                `).join('');
+                
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function loadAnimeList() {
+            try {
+                const status = document.getElementById('filter-status').value;
+                let url = '/api/anime?limit=100';
+                if (status) url += `&status=${status}`;
+                
+                const data = await fetchApi(url);
+                animeList = data.data || [];
+                renderAnimeTable(animeList);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function renderAnimeTable(list) {
+            const tbody = document.getElementById('anime-table-body');
+            if (list.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-gray-500">Tidak ada anime</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = list.map(a => `
+                <tr class="hover:bg-gray-800/50 transition">
+                    <td class="p-4">
+                        <img src="${a.cover}" class="w-12 h-16 object-cover rounded" onerror="this.src='https://via.placeholder.com/48x64'">
+                    </td>
+                    <td class="p-4">
+                        <div class="font-medium">${a.title}</div>
+                        <div class="text-xs text-gray-500 mt-1">ID: ${a.id}</div>
+                    </td>
+                    <td class="p-4">
+                        <div class="flex flex-wrap gap-1">
+                            ${(a.genres || []).map(g => `<span class="px-2 py-1 bg-gray-800 rounded text-xs">${g}</span>`).join('')}
+                        </div>
+                    </td>
+                    <td class="p-4">
+                        <span class="px-2 py-1 rounded text-xs ${a.status === 'ongoing' ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'}">${a.status}</span>
+                    </td>
+                    <td class="p-4">${a.episodes?.total || 0} / ${a.episodes?.total || 0}</td>
+                    <td class="p-4">
+                        <div class="flex gap-2">
+                            <button onclick="editAnime('${a.id}')" class="w-8 h-8 rounded bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 flex items-center justify-center" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="manageEpisodes('${a.id}')" class="w-8 h-8 rounded bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 flex items-center justify-center" title="Episodes">
+                                <i class="fas fa-list"></i>
+                            </button>
+                            <button onclick="deleteAnime('${a.id}')" class="w-8 h-8 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30 flex items-center justify-center" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function searchAnime() {
+            const query = document.getElementById('search-anime').value.toLowerCase();
+            const filtered = animeList.filter(a => a.title.toLowerCase().includes(query));
+            renderAnimeTable(filtered);
+        }
+
+        // Anime Form
+        document.getElementById('anime-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const animeData = {
+                id: document.getElementById('anime-id-input').value,
+                title: document.getElementById('anime-title').value,
+                status: document.getElementById('anime-status').value,
+                rating: parseFloat(document.getElementById('anime-rating').value) || 0,
+                genres: document.getElementById('anime-genres').value.split(',').map(g => g.trim()).filter(g => g),
+                description: document.getElementById('anime-description').value,
+                cover: document.getElementById('cover-url').value || '/images/default.jpg',
+                banner: document.getElementById('cover-url').value || '/images/default.jpg',
+                episodes: { total: 0, duration: 24 },
+                episodesList: []
+            };
+
+            // Upload cover if file selected
+            if (selectedCoverFile) {
+                try {
+                    const base64 = await fileToBase64(selectedCoverFile);
+                    const thumbRes = await fetch(`${getBaseUrl()}/api/admin/thumbnail`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ animeId: animeData.id, imageBase64: base64 })
+                    });
+                    const thumbData = await thumbRes.json();
+                    if (thumbData.success) {
+                        animeData.cover = thumbData.path;
+                        animeData.banner = thumbData.path;
+                    }
+                } catch (err) {
+                    console.error('Cover upload error:', err);
+                }
+            }
+
+            try {
+                const result = await fetchApi('/api/admin/anime', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(animeData)
+                });
+                
+                showToast('Anime berhasil disimpan!');
+                showPage('anime-list');
+                resetAnimeForm();
+            } catch (err) {
+                showToast('Gagal menyimpan anime', 'error');
+            }
+        });
+
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function handleCoverSelect(input) {
+            if (input.files && input.files[0]) {
+                selectedCoverFile = input.files[0];
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    document.getElementById('cover-preview').src = e.target.result;
+                    document.getElementById('cover-preview').classList.remove('hidden');
+                    document.getElementById('cover-placeholder').classList.add('hidden');
+                };
+                reader.readAsDataURL(selectedCoverFile);
+            }
+        }
+
+        function resetAnimeForm() {
+            document.getElementById('anime-form').reset();
+            document.getElementById('anime-id-input').disabled = false;
+            document.getElementById('cover-preview').classList.add('hidden');
+            document.getElementById('cover-placeholder').classList.remove('hidden');
+            selectedCoverFile = null;
+        }
+
+        async function editAnime(id) {
+            const anime = animeList.find(a => a.id === id);
+            if (!anime) return;
+            
+            document.getElementById('form-title').textContent = 'Edit Anime';
+            document.getElementById('anime-id-input').value = anime.id;
+            document.getElementById('anime-id-input').disabled = true;
+            document.getElementById('anime-title').value = anime.title;
+            document.getElementById('anime-status').value = anime.status || 'ongoing';
+            document.getElementById('anime-rating').value = anime.rating || '';
+            document.getElementById('anime-genres').value = (anime.genres || []).join(', ');
+            document.getElementById('anime-description').value = anime.description || '';
+            document.getElementById('cover-url').value = anime.cover || '';
+            
+            if (anime.cover) {
+                document.getElementById('cover-preview').src = anime.cover;
+                document.getElementById('cover-preview').classList.remove('hidden');
+                document.getElementById('cover-placeholder').classList.add('hidden');
+            }
+            
+            showPage('add-anime');
+        }
+
+        async function deleteAnime(id) {
+            if (!confirm('Yakin ingin menghapus anime ini? Semua episode juga akan terhapus!')) return;
+            
+            try {
+                await fetchApi(`/api/admin/anime/${id}`, { method: 'DELETE' });
+                showToast('Anime berhasil dihapus');
+                loadAnimeList();
+            } catch (err) {
+                showToast('Gagal menghapus anime', 'error');
+            }
+        }
+
+        // Episode Management
+        async function loadAnimeSelect() {
+            try {
+                const data = await fetchApi('/api/anime?limit=100');
+                const select = document.getElementById('episode-anime-id');
+                select.innerHTML = '<option value="">-- Pilih Anime --</option>' + 
+                    data.data.map(a => `<option value="${a.id}">${a.title}</option>`).join('');
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function handleVideoSelect(input) {
+            if (input.files && input.files[0]) {
+                selectedVideoFile = input.files[0];
+                document.getElementById('video-info').classList.add('hidden');
+                document.getElementById('video-selected').classList.remove('hidden');
+                document.getElementById('video-filename').textContent = selectedVideoFile.name;
+                document.getElementById('video-size').textContent = formatBytes(selectedVideoFile.size);
+            }
+        }
+
+        function handleEpThumbSelect(input) {
+            if (input.files && input.files[0]) {
+                selectedThumbnailFile = input.files[0];
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    document.getElementById('ep-thumb-preview').src = e.target.result;
+                    document.getElementById('ep-thumb-preview').classList.remove('hidden');
+                    document.getElementById('ep-thumb-placeholder').classList.add('hidden');
+                };
+                reader.readAsDataURL(selectedThumbnailFile);
+            }
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        document.getElementById('episode-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            formData.append('animeId', document.getElementById('episode-anime-id').value);
+            formData.append('episodeNumber', document.getElementById('episode-number').value);
+            formData.append('episodeTitle', document.getElementById('episode-title').value);
+            
+            if (selectedVideoFile) formData.append('video', selectedVideoFile);
+            if (selectedThumbnailFile) formData.append('thumbnail', selectedThumbnailFile);
+            
+            const btn = document.getElementById('btn-upload-ep');
+            const progressDiv = document.getElementById('upload-progress');
+            const progressBar = document.getElementById('progress-bar');
+            const progressText = document.getElementById('progress-text');
+            
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner loading"></i> Uploading...';
+            progressDiv.classList.remove('hidden');
+            
+            try {
+                const xhr = new XMLHttpRequest();
+                
+                xhr.upload.addEventListener('progress', (e) => {
+                    if (e.lengthComputable) {
+                        const percent = Math.round((e.loaded / e.total) * 100);
+                        progressBar.style.width = percent + '%';
+                        progressText.textContent = percent + '%';
+                    }
+                });
+                
+                xhr.addEventListener('load', () => {
+                    if (xhr.status === 200) {
+                        showToast('Episode berhasil diupload!');
+                        document.getElementById('episode-form').reset();
+                        resetVideoUpload();
+                        progressDiv.classList.add('hidden');
+                    } else {
+                        throw new Error('Upload failed');
+                    }
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-upload"></i> Upload Episode';
+                });
+                
+                xhr.addEventListener('error', () => {
+                    showToast('Upload gagal', 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-upload"></i> Upload Episode';
+                });
+                
+                xhr.open('POST', `${getBaseUrl()}/api/admin/upload`);
+                xhr.send(formData);
+                
+            } catch (err) {
+                showToast('Upload gagal: ' + err.message, 'error');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-upload"></i> Upload Episode';
+            }
+        });
+
+        function resetVideoUpload() {
+            selectedVideoFile = null;
+            selectedThumbnailFile = null;
+            document.getElementById('video-info').classList.remove('hidden');
+            document.getElementById('video-selected').classList.add('hidden');
+            document.getElementById('ep-thumb-preview').classList.add('hidden');
+            document.getElementById('ep-thumb-placeholder').classList.remove('hidden');
+        }
+
+        async function manageEpisodes(animeId) {
+            currentAnime = animeList.find(a => a.id === animeId);
+            if (!currentAnime) return;
+            
+            document.getElementById('manage-anime-title').textContent = `Manage Episodes: ${currentAnime.title}`;
+            
+            const tbody = document.getElementById('episodes-table-body');
+            const episodes = currentAnime.episodesList || [];
+            
+            if (episodes.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-gray-500">Belum ada episode</td></tr>';
+            } else {
+                tbody.innerHTML = episodes.map((ep, idx) => `
+                    <tr class="hover:bg-gray-800/50">
+                        <td class="p-4 font-medium">EP ${ep.number}</td>
+                        <td class="p-4">${ep.title}</td>
+                        <td class="p-4">${formatDuration(ep.duration)}</td>
+                        <td class="p-4 text-sm text-gray-400">${ep.aired || '-'}</td>
+                        <td class="p-4">
+                            <button onclick="deleteEpisode('${animeId}', '${ep.id}')" class="w-8 h-8 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30 flex items-center justify-center">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+            
+            showPage('manage-episodes');
+        }
+
+        function formatDuration(seconds) {
+            if (!seconds) return '-';
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function openUploadForCurrentAnime() {
+            if (currentAnime) {
+                document.getElementById('episode-anime-id').value = currentAnime.id;
+                showPage('upload-episode');
+            }
+        }
+
+        async function deleteEpisode(animeId, epId) {
+            if (!confirm('Yakin ingin menghapus episode ini?')) return;
+            
+            try {
+                await fetchApi(`/api/admin/episode/${animeId}/${epId}`, { method: 'DELETE' });
+                showToast('Episode berhasil dihapus');
+                // Refresh
+                const data = await fetchApi(`/api/anime/${animeId}`);
+                currentAnime = data.data;
+                manageEpisodes(animeId);
+            } catch (err) {
+                showToast('Gagal menghapus episode', 'error');
+            }
+        }
+
+        // Drag and drop zones
+        document.querySelectorAll('.drop-zone').forEach(zone => {
+            zone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                zone.classList.add('dragover');
+            });
+            
+            zone.addEventListener('dragleave', () => {
+                zone.classList.remove('dragover');
+            });
+            
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                zone.classList.remove('dragover');
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    const input = zone.querySelector('input[type="file"]');
+                    if (input) {
+                        const dt = new DataTransfer();
+                        dt.items.add(files[0]);
+                        input.files = dt.files;
+                        input.dispatchEvent(new Event('change'));
+                    }
+                }
+            });
+        });
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDashboard();
+        });
+    </script>
+
+</body>
+</html>
