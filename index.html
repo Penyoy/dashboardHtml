@@ -732,6 +732,7 @@
                 });
                 
                 xhr.open('POST', `${getBaseUrl()}/api/admin/upload`);
+                xhr.setRequestHeader('Authorization', 'Bearer tachyon_istri_gw');
                 xhr.send(formData);
                 
             } catch (err) {
